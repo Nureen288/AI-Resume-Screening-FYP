@@ -1,5 +1,6 @@
 import streamlit as st
 import spacy
+import en_core_web_sm
 from io import BytesIO
 import fitz  # PyMuPDF
 import docx
@@ -81,7 +82,7 @@ USER_CREDENTIALS = {
 # -------------------
 # Load NLP Model
 # -------------------
-nlp = spacy.load("en_core_web_sm")
+nlp = en_core_web_sm.load()
 
 # -------------------
 # Utility Functions
