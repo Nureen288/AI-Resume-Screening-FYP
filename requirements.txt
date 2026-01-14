@@ -1,0 +1,6 @@
+spacy
+python-docx
+PyMuPDF
+matplotlib
+streamlit
+pandas
