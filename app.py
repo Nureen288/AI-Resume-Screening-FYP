@@ -403,16 +403,44 @@ def results_page():
         </div>
     """, unsafe_allow_html=True)
 
-    # --- 4. SORT AND FILTER CONTROLS ---
+   # --- 4. SORT AND FILTER CONTROLS ---
     col_sort, col_filter, col_spacer, col_actions = st.columns([1.5, 1.5, 1.5, 2.5])
+    
     with col_sort:
         sort_option = st.selectbox("Sort by", ["Overall Match", "Skills Match", "Role Match"])
     with col_filter:
         filter_option = st.selectbox("Filter", ["All Candidates", "Qualified (>= 60%)", "Top 5 Only"])
+    
     with col_actions:
         st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True) 
+        # DEFINE THE COLUMNS HERE
         act_col1, act_col2 = st.columns(2)
-        with act_col1: st.button("📥 Export", use_container_width=True)
+        
+        with act_col1:
+            # Create an Excel buffer
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Summary_Ranking')
+                # Add details for each candidate
+                for i, row in df.iterrows():
+                    original_file = next((f for f in st.session_state["uploaded_files"] if f.name == row["Candidate"]), None)
+                    if original_file:
+                        text = extract_text_from_pdf(original_file).lower() if original_file.name.endswith(".pdf") else extract_text_from_docx(original_file).lower()
+                        details = pd.DataFrame({
+                            "Keyword": skills + roles,
+                            "Type": ["Skill"]*len(skills) + ["Role"]*len(roles),
+                            "Found": ["Yes" if k in text else "No" for k in (skills + roles)]
+                        })
+                        details.to_excel(writer, index=False, sheet_name=f"Details_{i+1}")
+
+            st.download_button(
+                label="📥 Export",
+                data=output.getvalue(),
+                file_name='Screening_Report.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                use_container_width=True
+            )
+
         with act_col2:
             if st.button("🔄 New", use_container_width=True):
                 st.session_state["page"] = "upload"
